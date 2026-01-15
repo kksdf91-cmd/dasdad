@@ -13,7 +13,7 @@ A mini project to practice Kubernetes and Helm.
 ## Project Structure
 
 ```
-fofatafo-k8s/
+mini-k8s-platform/
 ├── README.md
 ├── charts/                  # Helm chart
 │   └── web-app/
@@ -199,25 +199,10 @@ kubectl delete namespace platform
 
 * On Mac with Docker driver, NodePort is not accessible directly → use `minikube service` or `minikube tunnel`
 * Keep the terminal with `minikube tunnel` open while using Ingress
-* You can create different values files for environments:
-
-```bash
-helm install fofatafo ./web-app -f values-minikube.yaml
-helm upgrade fofatafo ./web-app -f values-prod.yaml
-```
-
 * Verify that Ingress resolves correctly:
-
 ```bash
 ping fofatafo.local
 ```
-
 Should respond with `127.0.0.1`.
 
 ---
-
-## References
-
-* [Kubernetes Documentation](https://kubernetes.io/docs/home/)
-* [Helm Documentation](https://helm.sh/docs/)
-* [Minikube Documentation](https://minikube.sigs.k8s.io/docs/)
