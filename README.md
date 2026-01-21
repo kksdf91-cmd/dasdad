@@ -1,208 +1,189 @@
-A mini project to practice Kubernetes and Helm.
+#  Anime Release Notifier
 
-* Manual deployment via Kubernetes YAML
-* Deployment via Helm chart
-* Ingress with a local domain
-* Readiness and Liveness probes
-* Horizontal Pod Autoscaler (HPA)
-* Resource requests and limits
-* Local development with Minikube
+A sophisticated Telegram bot built with Python and deployed on AWS ECS Fargate. Provides real-time anime search capabilities and automated notifications for new episode releases using the AniList GraphQL API.
 
----
+##  Features
 
-## Project Structure
+-  **Intelligent Anime Search** - Search by English titles with fuzzy matching
+-  **Automated Notifications** - Hourly checks for new episodes across followed anime
+-  **Comprehensive Information** - Status, episodes, genres, ratings, and detailed descriptions
+-  **Serverless Architecture** - Fully managed AWS ECS Fargate deployment
+-  **Secure Secrets Management** - AWS Secrets Manager for sensitive data
+-  **Automated CI/CD** - GitHub Actions for seamless deployment
+-  **Real-time Monitoring** - CloudWatch logs and metrics
+-  **Infrastructure as Code** - Terraform modules for reproducible deployments
+
+##  Technologies
+
+- **Backend**: Python 3.9+
+- **Bot Framework**: Custom Telegram Bot API integration (requests)
+- **API Integration**: AniList GraphQL API
+- **Infrastructure**: Terraform, AWS (ECS, ECR, VPC, Secrets Manager)
+- **Containerization**: Docker
+- **CI/CD**: GitHub Actions
+- **State Management**: JSON file-based persistence
+
+##  Architecture
 
 ```
-mini-k8s-platform/
-├── README.md
-├── charts/                  # Helm chart
-│   └── web-app/
-├── k8s/
-│   ├── base/
-│   │   ├── deployment.yaml
-│   │   ├── service.yaml
-│   │   ├── configmap.yaml
-│   │   └── hpa.yaml
-│   └── overlays/
-│       └── minikube/
-│           └── ingress.yaml
-└── .gitignore
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Telegram Bot  │◄──►│   AniList API   │    │   AWS Services  │
+│                 │    │                 │    │                 │
+│ • Interactive   │    │ • Anime search  │    │ • ECS Fargate   │
+│   messages      │    │ • Info & data   │    │ • Secrets Mgr   │
+│ • Notifications │    │ • New episodes  │    │ • CloudWatch    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
----
+##  Prerequisites
 
-## Requirements
+- AWS account with admin permissions
+- Telegram bot token ([create with @BotFather](https://t.me/botfather))
+- GitHub account for CI/CD
 
-* MacOS / Linux
-* Minikube
-* kubectl
-* Helm (for Helm deployment)
-* Docker (for local builds/testing)
+##  Quick Start
 
----
-
-## Manual Deployment via YAML
-
-1. Start Minikube:
+### 1. Clone Repository
 
 ```bash
-minikube start
+git clone https://github.com/your-username/anime-release-notifier.git
+cd anime-release-notifier
 ```
 
-2. Check cluster status:
+### 2. Setup AWS (complete in order)
+
+#### Create S3 Bucket for Terraform
+```bash
+aws s3 mb s3://anime-notifier-terraform-state --region eu-north-1
+aws s3api put-bucket-versioning \
+  --bucket anime-notifier-terraform-state \
+  --versioning-configuration Status=Enabled
+```
+
+
+
+### 3. Configure GitHub Secrets
+
+Go to **GitHub → Repository → Settings → Secrets and variables → Actions**
+
+Add these secrets:
+
+| Secret | Description | Where to get |
+|--------|-------------|--------------|
+| `AWS_ACCESS_KEY_ID` | AWS Access Key ID | AWS Console → IAM → Users → Security credentials |
+| `AWS_SECRET_ACCESS_KEY` | AWS Secret Access Key | AWS Console → IAM → Users → Security credentials |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token | @BotFather → /newbot |
+| `TELEGRAM_CHAT_ID` | Chat ID for notifications | Send message to bot, then `https://api.telegram.org/bot<TOKEN>/getUpdates` |
+
+### 4. Deploy
 
 ```bash
-kubectl get nodes
+# Push to main branch
+git add .
+git commit -m "Initial deployment"
+git push origin main
 ```
 
-3. (Optional) Create a namespace:
+GitHub Actions automatically:
+1.  Validates code
+2.  Creates S3 bucket (if needed)
+3.  Runs Terraform (plan + apply)
+4.  Builds Docker image
+5.  Pushes to ECR
+6.  Updates ECS service
+
+### 5. Test
+
+#### In Telegram:
+- Send `/start` to bot - get welcome message
+- Send anime name: `Naruto`, `Death Note`, `One Piece`
+- Bot sends detailed information
+
+#### In AWS Console:
+- **ECS → Clusters** - check `anime-cluster`
+- **CloudWatch → Log groups** - logs in `/ecs/anime-notifier`
+- **Secrets Manager** - secrets in `anime-notifier-secrets`
+
+##  Usage
+
+### Commands:
+- `/start` - welcome message
+- `/help` - help commands
+- `/anime [name]` - search anime
+
+### Examples:
+```
+Naruto
+/anime Attack on Titan
+Death Note
+/anime My Hero Academia
+```
+
+### Response Format:
+```
+ Attack on Titan
+
+ Status: Finished
+ Season: Fall 2013
+ Episodes: 87
+ Genres: Action, Drama, Suspense
+ Score: 95/100
+ Next Episode: - (finished)
+
+ Description:
+Several hundred years ago, humans were nearly...
+```
+
+##  Project Structure
+
+```
+├── app/                    # Python app
+│   ├── main.py            # Main bot logic
+│   ├── telegram.py        # Telegram API integration
+│   ├── anilist.py         # AniList API client
+│   ├── state.py           # State management
+│   └── requirements.txt   # Python dependencies
+├── infra/                 # Terraform infrastructure
+│   ├── main.tf           # Main config
+│   ├── backend.tf        # S3 backend
+│   ├── variables.tf      # Variables
+│   ├── outputs.tf        # Outputs
+│   └── modules/          # Terraform modules
+│       ├── network/      # VPC, subnets, security groups
+│       ├── secrets/      # AWS Secrets Manager
+│       ├── ecr/          # Elastic Container Registry
+│       ├── ecs/          # ECS Fargate
+│       ├── iam/          # IAM roles
+│       ├── logs/         # CloudWatch logs
+│       └── eventbridge/  # EventBridge (removed)
+├── docker/               # Docker config
+├── .github/workflows/    # GitHub Actions CI/CD
+└── README.md            # This documentation
+```
+
+##  Development
+
+### Local Testing:
 
 ```bash
-kubectl create namespace platform
+# Fill environment variables
+cp .env.example .env
+
+# Run with Docker Compose
+docker-compose up --build
 ```
 
-4. Apply manifests:
+##  Security
 
-```bash
-kubectl apply -f k8s/base/ -n platform
-kubectl apply -f k8s/overlays/minikube/ -n platform
-```
+-  **Secrets Manager** - tokens stored in AWS Secrets Manager
+-  **No hardcode** - all secrets in variables
+-  **IAM roles** - minimal required permissions
+-  **Logging** - all actions logged in CloudWatch
 
-5. Enable Ingress:
+##  Monitoring
 
-```bash
-minikube addons enable ingress
-```
+- **CloudWatch Logs** - app logs
+- **CloudWatch Metrics** - ECS metrics
+- **ECS Service** - container status
+- **GitHub Actions** - deployment status
 
-6. Add local domain to `/etc/hosts`:
-
-```
-127.0.0.1 fofatafo.local
-```
-
-7. Start Minikube tunnel (required for Ingress on Mac):
-
-```bash
-sudo minikube tunnel
-```
-
-8. Check pods, services, and ingress:
-
-```bash
-kubectl get pods -n platform
-kubectl get svc -n platform
-kubectl get ingress -n platform
-```
-
-9. Open the application in browser:
-
-```
-http://fofatafo.local
-```
-
-> Alternatively, if you want to use NodePort without Ingress:
-
-```bash
-minikube service fofatafo -n platform
-```
-
----
-
-## Deployment via Helm
-
-1. Go to project root:
-
-```bash
-cd charts
-```
-
-2. Install the Helm chart:
-
-```bash
-helm install fofatafo ./web-app
-```
-
-3. Check the deployment:
-
-```bash
-helm list
-kubectl get pods
-kubectl get svc
-kubectl get ingress
-```
-
-4. If Ingress is enabled, start tunnel:
-
-```bash
-sudo minikube tunnel
-```
-
-5. Open the app:
-
-```
-http://fofatafo.local
-```
-
-6. To upgrade after changes:
-
-```bash
-helm upgrade fofatafo ./web-app
-```
-
----
-
-## Useful Commands
-
-* View pod logs:
-
-```bash
-kubectl logs <pod-name>
-```
-
-* Execute a shell inside pod:
-
-```bash
-kubectl exec -it <pod-name> -- /bin/sh
-```
-
-* Describe pod and check readiness/liveness:
-
-```bash
-kubectl describe pod <pod-name>
-```
-
-* Delete Helm release:
-
-```bash
-helm uninstall fofatafo
-```
-
-* Clean all resources:
-
-```bash
-kubectl delete namespace platform
-```
-
----
-
-## Features
-
-* Readiness and Liveness probes check `/` path
-* HPA automatically scales pods based on CPU
-* Local domain `fofatafo.local` for Ingress
-* NodePort available for quick testing via `minikube service`
-* Helm chart is fully parameterized via `values.yaml` (image, replicas, resources, probes)
-
----
-
-## Tips
-
-* On Mac with Docker driver, NodePort is not accessible directly → use `minikube service` or `minikube tunnel`
-* Keep the terminal with `minikube tunnel` open while using Ingress
-* Verify that Ingress resolves correctly:
-```bash
-ping fofatafo.local
-```
-Should respond with `127.0.0.1`.
-
----
