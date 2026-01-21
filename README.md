@@ -1,6 +1,6 @@
 #  Anime Release Notifier
 
-A sophisticated Telegram bot built with Python and deployed on AWS ECS Fargate. Provides real-time anime search capabilities and automated notifications for new episode releases using the AniList GraphQL API.
+Telegram bot built with Python and deployed on AWS ECS Fargate. Provides real-time anime search capabilities and automated notifications for new episode releases using the AniList GraphQL API.
 
 ##  Features
 
@@ -115,7 +115,6 @@ GitHub Actions automatically:
 ```
 Naruto
 /anime Attack on Titan
-Death Note
 /anime My Hero Academia
 ```
 
